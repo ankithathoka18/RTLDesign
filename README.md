@@ -19,7 +19,7 @@ https://drive.google.com/file/d/1gWQuItTwKyRN6vqT4pEMa3EiFafrveRz/view?usp=drive
 
 | Field | Details |
 |---|---|
-| Name | Moursagna Rao |
+| Name | Ankitha |
 | University | Anurag University |
 | Program | B.Tech |
 | Branch | Electronics and Communication Engineering (ECE) |
