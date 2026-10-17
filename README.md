@@ -638,13 +638,10 @@ Next Stages
 
 # Author
 
-**Moursagna Rao**
+**ANKITHA**
 
 B.Tech – Electronics and Communication Engineering  
 Anurag University
 
 ---
 
-## Repository
-
-[GitHub Repository](https://github.com/Moursagna/VSDIAT-Chip-Design)
