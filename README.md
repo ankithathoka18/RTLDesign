@@ -1,313 +1,301 @@
-# VSDIAT BabySoC — RTL, Synthesis, Static Timing Analysis and Physical Design
+# VSDBabySoC Physical Design and Static Timing Analysis
 
-This repository documents my hands-on work on **BabySoC design and ASIC implementation** as part of my VSDIAT / VLSI training. The project records the flow from RTL and functional simulation through synthesis, multi-corner static timing analysis (STA), and the physical-design stages reached so far.
+This directory documents the physical-design and timing-analysis work
+performed on **VSDBabySoC** using the **SKY130 HD** platform and
+OpenROAD/OpenSTA tools.
 
-> **Scope note:** The documented work currently extends through post-route STA. This README does not claim that the design is timing-closed, DRC-clean, LVS-clean, or ready for tape-out. See the physical-design evidence and limitations in [`physical_design/README.md`](physical_design/README.md).
+The evidence is organized by stage, from pre-layout static timing
+analysis (STA) through floorplanning, placement, clock-tree synthesis
+(CTS), routing, and post-route STA.
 
----
+> **Evidence note:** Screenshots document the tool views and results
+> visible at the time they were captured. A stage completing does not,
+> by itself, prove timing closure, complete design-rule-check (DRC)
+> closure, layout-versus-schematic (LVS) closure, or signoff readiness.
 
-## Project Overview
+## Directory Structure
 
-The BabySoC contains three major blocks:
-
-- **RVMyth** — RISC-V-based digital processor core
-- **AVSDPLL** — PLL block used for clock generation
-- **AVSDDAC** — DAC block that converts the processor's digital output
-
-The top-level module is:
-
-```text
-vsdbabysoc
+``` text
+physical_design/
+├── README.md
+├── pre_layout_sta/
+├── floorplanning/
+├── placement/
+├── cts/
+├── routing/
+└── post_route_sta/
 ```
 
-## BabySoC Architecture
-
-```text
-                         ┌──────────────┐
- ENb_CP ────────────────►│              │
- ENb_VCO ───────────────►│   AVSDPLL    │
- REF ───────────────────►│     PLL      │─── CLK ───┐
- VCO_IN ────────────────►│              │            │
-                         └──────────────┘            ▼
-                                                ┌──────────┐
-                                         reset ─►│  RVMyth  │
-                                                │   CPU    │
-                                                └────┬─────┘
-                                                     │
-                                                RV_TO_DAC[9:0]
-                                                     │
-                                                     ▼
-                                                ┌──────────┐
-                                         VREFH ─►│ AVSDDAC  │
-                                                │   DAC    │
-                                                └────┬─────┘
-                                                     │
-                                                     ▼
-                                                    OUT
-```
-
-## Design Hierarchy
-
-```text
-vsdbabysoc
-├── avsddpll
-├── rvmyth
-└── avsddac
-```
-
-The `rvmyth` block contains the main digital processing logic and generates the 10-bit bus `RV_TO_DAC[9:0]`, which is provided to the DAC. The PLL supplies the clock used by the digital core.
-
----
-
-## Implementation Flow
-
-```text
-RTL
- │
- ▼
-Pre-Synthesis Functional Simulation
- │
- ▼
-Yosys Logic Synthesis
- │
- ▼
-SKY130 Technology Mapping
- │
- ▼
-Gate-Level Netlist
- │
- ▼
-Post-Synthesis Functional Simulation
- │
- ▼
-Pre-Layout Static Timing Analysis
- │
- ▼
-Floorplanning
- │
- ▼
-Placement
- │
- ▼
-Clock Tree Synthesis (CTS)
- │
- ▼
-Routing
- │
- ▼
-Post-Route Static Timing Analysis
- │
- ▼
-Further Physical Verification / Closure (not claimed complete)
-```
-
-## Project Progress
-
-| Stage | Status | Notes |
-|---|---|---|
-| RTL design | Completed | BabySoC RTL used for the documented flow |
-| Pre-synthesis simulation | Completed | Icarus Verilog and GTKWave |
-| Yosys synthesis | Completed | Logic optimization and synthesis |
-| SKY130 technology mapping | Completed | `sky130_fd_sc_hd` library |
-| Gate-level netlist | Generated | Used for post-synthesis simulation |
-| Post-synthesis simulation | Completed | Functional gate-level simulation |
-| Pre-layout STA | Executed | 18-corner analysis documented |
-| Floorplanning | Executed | Floorplan evidence documented; unconstrained pins are noted |
-| Placement | Executed | Placement-stage evidence documented |
-| Clock tree synthesis | Executed | CTS-stage evidence documented |
-| Routing | Executed | Routing evidence exists; routing DRC short violations were observed |
-| Post-route STA | Executed | 16-corner results documented; completion does not itself prove timing closure |
-| DRC/LVS/signoff | Not established by this README | Do not interpret the available evidence as clean signoff |
-| Final merged GDSII | Not established by this README | No claim of a verified, signoff-ready top-level GDSII |
-
-For the detailed stage-by-stage evidence, results, and caveats, see [`physical_design/README.md`](physical_design/README.md).
+Image links below assume that the screenshots are stored in the stage
+folders shown above and retain the filenames shown in the project
+screenshot, with a `.png` extension. If an uploaded image uses a
+different extension, update that link to match the exact filename in
+GitHub.
 
----
+------------------------------------------------------------------------
 
-# 1. RTL Design
+## 1. Pre-Layout Static Timing Analysis
 
-The BabySoC RTL is described using **Verilog HDL**. The existing RTL files are maintained in the repository's `rtl/` directory.
+Pre-layout STA evaluates timing using the timing constraints, mapped
+design, and library timing models available before physical
+implementation. The evidence below covers the 18 logical Liberty corners
+used in this analysis.
 
-The top-level module is `vsdbabysoc`. At RTL, the design describes intended hardware behavior without specifying every physical standard cell or the final layout.
+### 1.1 Corner execution
 
-# 2. Pre-Synthesis Simulation
+![Pre-layout STA: 18-corner
+execution](pre_layout_sta/pre_layout_sta_18_corner_execution.png)
 
-The RTL was simulated using:
+*The terminal output shows the multi-corner STA run and the discovered
+Liberty libraries. The screenshot also shows a permission-denied message
+when writing a report, so successful execution should be distinguished
+from successful report-file creation for every corner.*
 
-- **Icarus Verilog**
-- **GTKWave**
+### 1.2 Corner metrics
 
-The simulation flow is:
+![Pre-layout STA: 18-corner
+metrics](pre_layout_sta/pre_layout_sta_18_corner_metrics.png)
 
-```text
-RTL → Icarus Verilog → VCD waveform → GTKWave
-```
+*Corner-wise metrics collected during the pre-layout analysis.*
 
-Signals observed include `CLK`, `REF`, `reset`, `VCO_IN`, `VREFH`, `RV_TO_DAC[9:0]`, and `OUT`.
+### 1.3 Corner completion
 
-# 3. Logic Synthesis Using Yosys
+![Pre-layout STA: corner
+completion](pre_layout_sta/pre_layout_sta_corner_completion.png)
 
-**Yosys** was used to synthesize the RTL. The synthesis flow includes RTL reading, optimization, flip-flop mapping, logic optimization, and technology mapping.
+*Terminal evidence showing the reported completion status of the
+corner-analysis script. Review the accompanying logs and output files
+when interpreting the run status.*
 
-The target standard-cell library is:
+### 1.4 CSV results
 
-```text
-sky130_fd_sc_hd
-```
+![Pre-layout STA: CSV
+results](pre_layout_sta/pre_layout_sta_csv_results.png)
 
-The typical Liberty file used in the documented synthesis setup is:
+*CSV output listing corner-wise hold WNS/TNS and setup WNS/TNS. In the
+captured data, several slow-process corners have negative setup slack
+and strongly negative setup TNS values. These values should be
+interpreted using the exact report definitions and constraints.*
 
-```text
-sky130_fd_sc_hd__tt_025C_1v80.lib
-```
+### 1.5 Hold timing path
 
-Representative Yosys commands used in the flow include:
+![Pre-layout STA: hold timing
+path](pre_layout_sta/pre_layout_sta_hold_timing_path.png)
 
-```text
-read_verilog
-dfflibmap
-opt
-abc
-show
-flatten
-setundef -zero
-clean -purge
-rename -enumerate
-write_verilog
-```
+*Example minimum-delay timing path, including the startpoint, endpoint,
+clock path assumptions, data arrival time, data required time, and
+reported slack.*
 
-In brief:
+### 1.6 Setup timing path
 
-- `read_verilog` reads RTL source files.
-- `dfflibmap` maps flip-flops to library cells.
-- `opt` performs logic optimizations.
-- `abc` performs logic optimization and technology mapping using the target library.
-- `show` displays a design representation.
-- `flatten` removes module hierarchy by incorporating lower-level logic into the parent.
-- `setundef -zero` replaces undefined values with zero in the synthesized representation.
-- `clean -purge` removes unused or redundant objects.
-- `rename -enumerate` systematically renames generated objects.
-- `write_verilog` writes the resulting netlist.
+![Pre-layout STA: setup timing
+path](pre_layout_sta/pre_layout_sta_setup_timing_path.png)
 
-# 4. SKY130 Technology Mapping and Gate-Level Netlist
+*Example maximum-delay timing path through combinational cells between
+sequential elements. The path illustrates how cell and interconnect
+delays contribute to data arrival time.*
 
-Technology mapping replaces generic logic with cells from the target standard-cell library. Examples of cell names include:
+### 1.7 Setup slack summary
 
-```text
-sky130_fd_sc_hd__nand2_1
-sky130_fd_sc_hd__nor2_1
-sky130_fd_sc_hd__and2_0
-sky130_fd_sc_hd__mux2_1
-sky130_fd_sc_hd__xor2_1
-sky130_fd_sc_hd__dfrtp_1
-```
+![Pre-layout STA: setup slack
+summary](pre_layout_sta/pre_layout_sta_setup_slack_summary.png)
 
-The synthesized netlist documented in the original flow is:
+*Summary of setup and hold WNS/TNS metrics reported by the pre-layout
+analysis. Check the source reports before treating any zero value as
+proof that no violations exist; report coverage and constraints matter.*
 
-```text
-baby_soc_netlist3.v
-```
+### 1.8 WNS/TNS charts
 
-The actual repository path should be checked if this file is moved or renamed.
+![Pre-layout STA: WNS and TNS
+charts](pre_layout_sta/pre_layout_sta_wns_tns_charts.png)
 
-# 5. Post-Synthesis Simulation
+*Visual comparison of timing metrics across the evaluated corners.
+Negative setup slack or negative setup TNS indicates timing violations
+under the constraints used for that analysis.*
 
-The synthesized netlist was simulated using:
+------------------------------------------------------------------------
 
-- Icarus Verilog
-- SKY130 Verilog cell models
-- The testbench
-- GTKWave
+## 2. Floorplanning
 
-The documented compile-time options were:
+Floorplanning establishes the initial die/core organization and the
+placement of macros and other floorplan elements. The screenshot below
+documents the OpenROAD GUI view captured during the floorplanning stage.
 
-```text
--DPOST_SYNTH_SIM
--DFUNCTIONAL
--DUNIT_DELAY=#1
-```
+![Floorplanning in OpenROAD
+GUI](floorplanning/floorplanning_openroad_gui.png)
 
-The functional gate-level simulation generated a VCD waveform. The RTL and synthesized waveforms were compared using signals including `CLK`, `REF`, `reset`, `RV_TO_DAC[9:0]`, and `OUT`.
+*OpenROAD floorplanning view. The screenshot includes a timing chart and
+reports 17 unconstrained pins; this should be investigated when
+assessing timing-constraint coverage. The view alone does not establish
+that every floorplanning check passed.*
 
-**Interpretation:** Functional gate-level simulation checks logical behavior under the applied testbench. It is not the same as timing-aware gate-level simulation and does not replace STA.
+------------------------------------------------------------------------
 
-# 6. Static Timing Analysis and Physical Design
+## 3. Placement
 
-The repository now documents the physical-design work from **pre-layout STA through post-route STA**. The detailed evidence is grouped under `physical_design/`:
+Placement assigns locations to standard cells while considering legal
+placement sites, timing, congestion, and wirelength. The following
+screenshots document the global-placement view and a standard-cell
+placement view.
 
-| Stage | Documentation / evidence |
-|---|---|
-| Pre-layout STA | [`physical_design/pre_layout_sta/`](physical_design/pre_layout_sta/) |
-| Floorplanning | [`physical_design/floorplanning/`](physical_design/floorplanning/) |
-| Placement | [`physical_design/placement/`](physical_design/placement/) |
-| Clock Tree Synthesis | [`physical_design/cts/`](physical_design/cts/) |
-| Routing | [`physical_design/routing/`](physical_design/routing/) |
-| Post-route STA | [`physical_design/post_route_sta/`](physical_design/post_route_sta/) |
-| Overall physical-design notes | [`physical_design/README.md`](physical_design/README.md) |
+### 3.1 Global placement
 
-### Important interpretation notes
+![Global placement in OpenROAD
+GUI](placement/global_placement_openroad_gui.png)
 
-- **Pre-layout STA:** The documented analysis covers 18 corners. Negative setup slack indicates setup timing violations for the relevant constraints and corners. Check the included reports for exact metrics and units.
-- **Floorplanning:** The captured floorplan evidence reported 17 unconstrained pins. This should be documented as a constraint/setup limitation and investigated; it should not be hidden.
-- **Placement and CTS:** GUI screenshots demonstrate that stages were run, but screenshots alone do not establish placement quality, clock skew acceptability, or timing closure.
-- **Routing:** Routing-stage evidence is available, but short violations were observed in the available routing DRC report. Do not describe the routed design as DRC-clean unless a subsequent verified report supports that claim.
-- **Post-route STA:** The documented run completed analysis for 16 corners. Run completion is not equivalent to passing setup and hold timing at every corner. Interpret the reported slack according to the source report's definitions and units.
-- **GDSII and signoff:** Do not claim verified top-level GDSII generation, LVS cleanliness, signoff readiness, or timing closure unless the corresponding artifacts and reports are present and reviewed.
+*OpenROAD GUI view during the global-placement stage. The displayed
+layout is evidence of the placement-stage view, not a standalone proof
+of placement quality or timing closure.*
 
-# 7. Results and Existing Simulation Evidence
+### 3.2 Standard-cell placement layout
 
-The original results images remain linked below. Confirm that each file exists at the stated relative path and that the filename's capitalization matches the repository.
+![Standard-cell placement
+layout](placement/standard_cell_placement_layout.png)
 
-## BabySoC Architecture
+*Layout view showing standard-cell placement. Use the corresponding
+placement reports for quantitative metrics such as utilization,
+displacement, congestion, and timing.*
 
-![BabySoC Architecture](results/architecture.png)
+------------------------------------------------------------------------
 
-## Pre-Synthesis Simulation
+## 4. Clock-Tree Synthesis (CTS)
 
-![Pre-Synthesis Waveform](results/pre_synthesis_waveform.png)
+CTS builds the clock distribution network for sequential elements. The
+resulting clock paths affect insertion delay, skew, and setup/hold
+timing.
 
-## Synthesis Results
+![Clock-tree synthesis in OpenROAD
+GUI](cts/clock_tree_synthesis_openroad_gui.png)
 
-![Synthesis Statistics 1](results/synthesis_statistics1.png)
+*OpenROAD GUI view captured during CTS. Clock latency, skew, buffer
+counts, and post-CTS timing should be taken from the associated CTS
+reports rather than inferred from the screenshot alone.*
 
-![Synthesis Statistics 2](results/synthesis_statistics2.png)
+------------------------------------------------------------------------
 
-## Post-Synthesis Simulation
+## 5. Routing
 
-![Post-Synthesis Waveform](results/post_synthesis_waveform.png)
+Routing implements signal interconnect using the available metal layers
+and vias. The images below are visual evidence of routing/layout views.
 
-Physical-design screenshots and reports are maintained separately under `physical_design/` so that the simulation/synthesis evidence and physical-design evidence remain organized.
+### 5.1 Routing layout view 1
 
----
+![Routing layout view 1](routing/routing_layout_view_1.png)
 
-# 8. Tools and Technologies
+*Routing/layout view captured during physical implementation.*
 
-| Area | Tools / technology |
-|---|---|
-| HDL | Verilog HDL |
-| Simulation | Icarus Verilog, GTKWave |
-| Synthesis | Yosys, ABC |
-| Standard-cell library | SKY130 `sky130_fd_sc_hd` |
-| Timing analysis | STA tooling and Liberty timing models |
-| Physical design | OpenROAD-based flow / OpenROAD GUI evidence |
-| Environment | Linux |
+### 5.2 Routing layout view 2
 
----
+![Routing layout view 2](routing/routing_layout_view_2.png)
 
-# Key Learning
+*Additional routing/layout view. The image alone does not establish
+detailed-routing completion or DRC cleanliness.*
 
-This project demonstrates the distinction between the main implementation representations:
+**Known limitation:** The available routing DRC report contains entries
+marked `Short`, including entries involving DAC-related nets. These
+violations must be reviewed and resolved or explicitly documented before
+claiming DRC-clean routing. Do not describe the design as DRC-clean,
+LVS-clean, or signoff-ready without corresponding verification evidence.
 
-- **RTL:** behavioral/structural hardware description.
-- **Synthesized netlist:** technology-mapped standard-cell connectivity.
-- **Physical implementation:** floorplan, placed cells, clock tree, and routed interconnect.
-- **STA:** constraint-based analysis of timing paths at specified corners; it is not a functional simulation.
-- **Physical verification:** DRC and LVS checks that must be supported by their own reports.
+The existence of macro GDS files does not, by itself, prove that a
+merged top-level VSDBabySoC GDS was generated.
 
-The central lesson is that progress through a flow stage does not automatically mean that the design passes that stage's quality checks. Timing, constraints, routing, and physical-verification results must be reviewed independently.
+------------------------------------------------------------------------
 
-## Current Milestone
+## 6. Post-Route Static Timing Analysis
 
-**Documented milestone:** RTL → post-synthesis functional simulation → pre-layout STA → floorplanning → placement → CTS → routing → post-route STA.
+Post-route STA evaluates timing after routing, using the timing setup
+and parasitic information available to the analysis. The post-route
+analysis documented here covers **16 evaluated corners**. This corner
+set is distinct from the 18 logical Liberty corners used in the
+pre-layout analysis; the two sets should not be assumed identical.
 
-**Next engineering priority:** Review and resolve constraint issues and timing violations, investigate the reported routing DRC shorts, and collect verified reports for subsequent physical verification. Do not label the design signoff-ready until the relevant checks pass.
+### 6.1 Sixteen-corner completion
+
+![Post-route STA: 16-corner
+completion](post_route_sta/post_route_sta_16_corner_completion.png)
+
+*Terminal output reporting 16 completed runs and zero failed runs for
+the post-route STA script. This indicates the script's reported
+execution status; it does not mean that every corner met setup and hold
+timing requirements.*
+
+### 6.2 Corner slack results
+
+![Post-route STA: corner slack
+results](post_route_sta/post_route_sta_corner_slack_results.png)
+
+*Corner-wise worst-slack results. Confirm the report's definitions of
+`worst slack max` and `worst slack min` before labeling them as setup or
+hold metrics.*
+
+### 6.3 Setup TNS chart
+
+![Post-route STA: setup
+TNS](post_route_sta/post_route_sta_setup_tns.png)
+
+*Setup total negative slack (TNS) visualization across the evaluated
+corners. Strongly negative TNS values indicate accumulated setup timing
+violations under the analyzed constraints.*
+
+### 6.4 Setup WNS chart
+
+![Post-route STA: setup
+WNS](post_route_sta/post_route_sta_setup_wns.png)
+
+*Setup worst negative slack (WNS) visualization across the evaluated
+corners. Negative WNS indicates at least one setup path violates its
+required timing; non-negative WNS alone does not establish complete
+signoff.*
+
+------------------------------------------------------------------------
+
+## 7. Interpretation and Limitations
+
+-   **Pre-layout STA:** The evidence shows analysis across 18 logical
+    Liberty corners. The captured outputs include negative setup
+    slack/TNS for some corners and a report-writing permission warning.
+-   **Physical implementation:** Floorplanning, placement, CTS, and
+    routing are represented by GUI screenshots. Use stage reports and
+    logs for quantitative claims.
+-   **Post-route STA:** The captured terminal output reports 16
+    completed runs and zero failed runs. Timing closure must be
+    evaluated from the actual per-corner setup/hold reports.
+-   **Corner sets:** The 18-corner pre-layout analysis and 16-corner
+    post-route analysis are separate datasets. Compare them only after
+    confirming their libraries, constraints, parasitic assumptions, and
+    metric definitions.
+-   **Routing integrity:** The available routing DRC report includes
+    `Short` violations. Do not claim DRC closure unless a subsequent
+    report verifies that these have been resolved.
+-   **GDS/LVS status:** These screenshots do not prove top-level GDS
+    stream-out or LVS closure. Claim either only when supported by the
+    corresponding artifacts and verification reports.
+-   **Unconstrained paths:** Investigate unconstrained pins or paths
+    before relying on STA summaries as comprehensive timing evidence.
+
+## 8. Evidence Inventory
+
+  -----------------------------------------------------------------------
+  Stage                               Evidence
+  ----------------------------------- -----------------------------------
+  Pre-layout STA                      18-corner execution, corner
+                                      metrics, completion output, CSV
+                                      results, hold/setup paths, setup
+                                      slack summary, WNS/TNS charts
+
+  Floorplanning                       OpenROAD floorplanning GUI
+
+  Placement                           Global-placement GUI and
+                                      standard-cell placement layout
+
+  CTS                                 Clock-tree synthesis GUI
+
+  Routing                             Two routing/layout views
+
+  Post-route STA                      16-corner completion, corner slack
+                                      results, setup TNS chart, setup WNS
+                                      chart
+  -----------------------------------------------------------------------
+
+
