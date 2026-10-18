@@ -1,96 +1,54 @@
-# Day 3 – Combinational, Sequential & Counter Optimization
+# Day 4 – GLS and Synthesis Simulation Mismatch
 
-## Overview
+## Objective
 
-Day 3 focused on understanding how different RTL descriptions are optimized during synthesis and how the resulting logic is mapped to SKY130 standard cells.
+To understand the differences between RTL simulation and synthesized/gate-level behavior and to study how RTL coding constructs can affect synthesis results.
 
-The work was divided into three major areas:
+## Experiments
 
-- Combinational logic optimization
-- Sequential logic optimization
-- Counter optimization
+The experiments covered:
 
-The synthesized designs were analyzed using Yosys and the resulting logic structures were inspected using synthesis evidence and netlist visualization.
+- RTL simulation
+- Synthesis analysis
+- Gate-level simulation (GLS)
+- Blocking assignment behavior
+- Ternary operator based multiplexing
+- Simulation and synthesis mismatch analysis
 
----
+## Simulation and Synthesis Evidence
 
-## 1. Combinational Optimization
+### Bad MUX
 
-This section explores how synthesis tools simplify and optimize combinational RTL descriptions.
+![Bad MUX Simulation](bad_mux_tb_sim.png)
 
-The experiments include individual optimization cases as well as optimization across multiple modules.
+![Bad MUX GLS](GLS_tb_bad_mux.v.png)
 
-### Experiments
+### Blocking Assignment Caveat
 
-- `opt_check`
-- `opt_check2`
-- `opt_check3`
-- `opt_check4`
-- `multiple_module_opt_check`
+![Blocking Assignment Simulation](blocking_caveat_sim.v.png)
 
-The corresponding synthesis evidence is documented inside the module folder.
+![Blocking Assignment Synthesis](blocking_caveat_synth.png)
 
-📁 [01_Combinational_Optimization](./01_Combinational_Optimization/)
+![Blocking Assignment GLS](GLS_blocking_caveat.png)
 
----
+### Ternary Operator MUX
 
-## 2. Sequential Optimization
+![Ternary Operator Simulation](sim_ternary_operator_mux.png)
 
-This section explores optimization of sequential RTL using DFF-based designs.
+![Ternary Operator Synthesis](ternary_operator_mux_synth.png)
 
-The experiments examine different constant-driven DFF configurations and their resulting synthesized structures.
+![Ternary Operator GLS](GTKWave_ternary_mux_GLS.png)
 
-### Experiments
+## Key Learning
 
-- DFF Constant 1
-- DFF Constant 2
-- DFF Constant 3
-- DFF Constant 4
-- DFF Constant 5
-
-The corresponding synthesis and simulation evidence is documented inside the module folder.
-
-📁 [02_Sequential_Optimization](./02_Sequential_Optimization/)
-
----
-
-## 3. Counter Optimization
-
-This section explores how synthesis tools optimize counter-based RTL and map the resulting logic to SKY130 standard cells.
-
-The experiments demonstrate different counter optimization cases and their resulting synthesized structures.
-
-📁 [03_Counter_Optimization](./03_Counter_Optimization/)
-
----
-
-## Tools & Technology
-
-The Day 3 experiments used:
-
-- **Yosys** – RTL synthesis and optimization
-- **SKY130** – standard-cell library
-- **GTKWave** – waveform inspection
-- **Graphviz / Yosys Netlist Visualization** – synthesized logic inspection
-
----
-
-## Key Learning Outcomes
-
-Through Day 3, I learned:
-
-- How synthesis tools optimize RTL descriptions
-- How combinational logic can be simplified during synthesis
-- How constant values influence synthesized logic
-- How sequential RTL is optimized
-- How counter-based RTL is synthesized
-- How optimized RTL is mapped to SKY130 standard cells
-- How to inspect synthesized netlists using Yosys
-
----
+- Understanding the purpose of gate-level simulation
+- Comparing RTL simulation with synthesized behavior
+- Understanding simulation and synthesis mismatches
+- Understanding the effect of RTL coding style on synthesis
+- Understanding blocking assignment behavior
+- Understanding synthesis of ternary-operator based multiplexers
+- Inspecting synthesized and gate-level simulation waveforms
 
 ## Completion Status
 
-**Day 3 – Completed ✅**
-
-The three optimization areas and their corresponding synthesis evidence have been organized into separate module folders.
+**Day 4 – Completed ✅**
