@@ -1,54 +1,115 @@
-# Day 4 – GLS and Synthesis Simulation Mismatch
+# Day 5 – RTL Constructs, Case/If Statements and Synthesis
 
-## Objective
+## Overview
 
-To understand the differences between RTL simulation and synthesized/gate-level behavior and to study how RTL coding constructs can affect synthesis results.
-
-## Experiments
+Day 5 focused on understanding how different Verilog RTL coding constructs are interpreted during simulation and synthesized into hardware.
 
 The experiments covered:
 
-- RTL simulation
-- Synthesis analysis
-- Gate-level simulation (GLS)
-- Blocking assignment behavior
-- Ternary operator based multiplexing
-- Simulation and synthesis mismatch analysis
+- `if` and `case` based combinational logic
+- Incomplete conditional assignments
+- Latch inference
+- MUX and DEMUX implementations
+- Generate-based RTL structures
+- Partial case assignments
+- Ripple Carry Adder
+- RTL simulation and synthesis analysis
 
-## Simulation and Synthesis Evidence
+The experiments were performed using Verilog HDL, GTKWave for waveform analysis, and Yosys with the SKY130 standard-cell library for synthesis and structural analysis.
 
-### Bad MUX
+---
 
-![Bad MUX Simulation](bad_mux_tb_sim.png)
+## 1. Bad Case
 
-![Bad MUX GLS](GLS_tb_bad_mux.v.png)
+The `bad_case` experiment demonstrates case-based combinational logic and its synthesized hardware representation.
 
-### Blocking Assignment Caveat
+📁 [bad_case](./bad_case/)
 
-![Blocking Assignment Simulation](blocking_caveat_sim.v.png)
+---
 
-![Blocking Assignment Synthesis](blocking_caveat_synth.png)
+## 2. Case-Based Combinational Logic
 
-![Blocking Assignment GLS](GLS_blocking_caveat.png)
+The `comp_case` experiment demonstrates a case-based combinational design and its synthesized implementation.
 
-### Ternary Operator MUX
+📁 [comp_case](./comp_case/)
 
-![Ternary Operator Simulation](sim_ternary_operator_mux.png)
+---
 
-![Ternary Operator Synthesis](ternary_operator_mux_synth.png)
+## 3. DEMUX Using Case Logic
 
-![Ternary Operator GLS](GTKWave_ternary_mux_GLS.png)
+The `demux_case` experiment demonstrates a demultiplexer implemented using case-based RTL.
 
-## Key Learning
+📁 [demux_case](./demux_case/)
 
-- Understanding the purpose of gate-level simulation
-- Comparing RTL simulation with synthesized behavior
-- Understanding simulation and synthesis mismatches
-- Understanding the effect of RTL coding style on synthesis
-- Understanding blocking assignment behavior
-- Understanding synthesis of ternary-operator based multiplexers
-- Inspecting synthesized and gate-level simulation waveforms
+---
+
+## 4. Incomplete `if` Assignment and Latch Inference
+
+The `incomp_if` experiment demonstrates the effect of incomplete assignments in combinational RTL and the resulting latch inference during synthesis.
+
+📁 [incomp_if](./incomp_if/)
+
+---
+
+## 5. Incomplete `if` – Second Case
+
+The `incomp_if2` experiment provides another example of incomplete conditional assignment and its synthesized implementation.
+
+📁 [incomp_if2](./incomp_if2/)
+
+---
+
+## 6. MUX Using Generate
+
+The `mux_generate` experiment demonstrates a multiplexer implementation using generate-based RTL construction.
+
+📁 [mux_generate](./mux_generate/)
+
+---
+
+## 7. Partial Case Assignment
+
+The `partial_case_assign` experiment demonstrates the hardware implications of partial assignments in case-based RTL.
+
+📁 [partial_case_assign](./partial_case_assign/)
+
+---
+
+## 8. Ripple Carry Adder
+
+The Ripple Carry Adder (RCA) experiment demonstrates a multi-bit arithmetic structure constructed from individual full-adder stages.
+
+The generated structural representation, simulation waveform, and synthesized implementation were examined.
+
+📁 [Ripple_Carry_Adder](./Ripple_Carry_Adder/)
+
+---
+
+## Tools Used
+
+- **Verilog HDL**
+- **Icarus Verilog**
+- **GTKWave**
+- **Yosys**
+- **SKY130 standard-cell library**
+
+---
+
+## Key Learning Outcomes
+
+Through these experiments, I learned:
+
+- How `if` and `case` constructs are synthesized into hardware
+- How incomplete combinational assignments can infer latches
+- How coding style affects synthesized hardware
+- How generate constructs can create repeated hardware structures
+- How MUX and DEMUX logic can be described using different RTL constructs
+- How partial case assignments affect synthesis
+- How a Ripple Carry Adder can be constructed from full-adder stages
+- How to compare RTL simulation with synthesized hardware structures
+
+---
 
 ## Completion Status
 
-**Day 4 – Completed ✅**
+**Day 5 – Completed ✅**
