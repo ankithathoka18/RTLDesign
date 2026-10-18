@@ -1,320 +1,313 @@
-# SKY130 Module 5 – Final Steps of Physical Design
+# VSDIAT BabySoC — RTL, Synthesis, Static Timing Analysis and Physical Design
 
-## Overview
+This repository documents my hands-on work on **BabySoC design and ASIC implementation** as part of my VSDIAT / VLSI training. The project records the flow from RTL and functional simulation through synthesis, multi-corner static timing analysis (STA), and the physical-design stages reached so far.
 
-This module covers the final stages of the SKY130 physical design flow, with focus on:
-
-- Routing and design concepts
-- Maze routing and Lee's algorithm
-- Parasitic extraction
-- Power Distribution Network (PDN)
-- TritonRoute routing features
-- Route-guide preprocessing
-- Panel-based routing
-- Connectivity and access points
-- Practical routing of the `picorv32a` design using OpenLane/OpenROAD
-
-The practical implementation was performed using the `picorv32a` design with the SKY130 technology and OpenLane physical-design flow.
+> **Scope note:** The documented work currently extends through post-route STA. This README does not claim that the design is timing-closed, DRC-clean, LVS-clean, or ready for tape-out. See the physical-design evidence and limitations in [`physical_design/README.md`](physical_design/README.md).
 
 ---
 
-## Module 5 Structure
+## Project Overview
 
-This module is divided into three major sections:
+The BabySoC contains three major blocks:
 
-1. **SKY130_D5_SK1 – Routing and Design**
-2. **SKY130_D5_SK2 – Power Distribution**
-3. **SKY130_D5_SK3 – TritonRoute Features**
+- **RVMyth** — RISC-V-based digital processor core
+- **AVSDPLL** — PLL block used for clock generation
+- **AVSDDAC** — DAC block that converts the processor's digital output
+
+The top-level module is:
+
+```text
+vsdbabysoc
+```
+
+## BabySoC Architecture
+
+```text
+                         ┌──────────────┐
+ ENb_CP ────────────────►│              │
+ ENb_VCO ───────────────►│   AVSDPLL    │
+ REF ───────────────────►│     PLL      │─── CLK ───┐
+ VCO_IN ────────────────►│              │            │
+                         └──────────────┘            ▼
+                                                ┌──────────┐
+                                         reset ─►│  RVMyth  │
+                                                │   CPU    │
+                                                └────┬─────┘
+                                                     │
+                                                RV_TO_DAC[9:0]
+                                                     │
+                                                     ▼
+                                                ┌──────────┐
+                                         VREFH ─►│ AVSDDAC  │
+                                                │   DAC    │
+                                                └────┬─────┘
+                                                     │
+                                                     ▼
+                                                    OUT
+```
+
+## Design Hierarchy
+
+```text
+vsdbabysoc
+├── avsddpll
+├── rvmyth
+└── avsddac
+```
+
+The `rvmyth` block contains the main digital processing logic and generates the 10-bit bus `RV_TO_DAC[9:0]`, which is provided to the DAC. The PLL supplies the clock used by the digital core.
 
 ---
 
-# SKY130_D5_SK1 – Routing and Design
-
-## Introduction to Routing
-
-Routing establishes physical interconnections between standard-cell pins, macros, and I/O connections using the available metal layers and vias.
-
-The routing process must satisfy physical and technology constraints such as:
-
-- Metal-layer constraints
-- Routing tracks
-- Preferred routing directions
-- Via requirements
-- Connectivity
-- Design-rule constraints
-
-![Routing Concept](SKY130_D5_SK1_Routing_and_Design/images/routing_concept.png)
-
-## Maze Routing and Lee's Algorithm
-
-Lee's algorithm is a classical maze-routing method based on wave propagation through a routing grid.
-
-The general process is:
-
-1. Start from the source location.
-2. Assign a distance value to the source.
-3. Expand to neighboring grid locations.
-4. Continue until the destination is reached.
-5. Backtrack from the destination to construct the route.
-
-![Lee's Algorithm Maze Routing](SKY130_D5_SK1_Routing_and_Design/images/lees_algorithm_maze_routing.png)
-
-## Parasitic Extraction
-
-After routing, physical interconnects introduce parasitic resistance and capacitance.
-
-The routed `picorv32a` design generated a SPEF file:
+## Implementation Flow
 
 ```text
-picorv32a.spef
+RTL
+ │
+ ▼
+Pre-Synthesis Functional Simulation
+ │
+ ▼
+Yosys Logic Synthesis
+ │
+ ▼
+SKY130 Technology Mapping
+ │
+ ▼
+Gate-Level Netlist
+ │
+ ▼
+Post-Synthesis Functional Simulation
+ │
+ ▼
+Pre-Layout Static Timing Analysis
+ │
+ ▼
+Floorplanning
+ │
+ ▼
+Placement
+ │
+ ▼
+Clock Tree Synthesis (CTS)
+ │
+ ▼
+Routing
+ │
+ ▼
+Post-Route Static Timing Analysis
+ │
+ ▼
+Further Physical Verification / Closure (not claimed complete)
 ```
 
-SPEF represents extracted parasitic information that can be used for post-route timing analysis.
+## Project Progress
 
-![Parasitic Extraction](SKY130_D5_SK1_Routing_and_Design/images/parasitics_extraction.png)
+| Stage | Status | Notes |
+|---|---|---|
+| RTL design | Completed | BabySoC RTL used for the documented flow |
+| Pre-synthesis simulation | Completed | Icarus Verilog and GTKWave |
+| Yosys synthesis | Completed | Logic optimization and synthesis |
+| SKY130 technology mapping | Completed | `sky130_fd_sc_hd` library |
+| Gate-level netlist | Generated | Used for post-synthesis simulation |
+| Post-synthesis simulation | Completed | Functional gate-level simulation |
+| Pre-layout STA | Executed | 18-corner analysis documented |
+| Floorplanning | Executed | Floorplan evidence documented; unconstrained pins are noted |
+| Placement | Executed | Placement-stage evidence documented |
+| Clock tree synthesis | Executed | CTS-stage evidence documented |
+| Routing | Executed | Routing evidence exists; routing DRC short violations were observed |
+| Post-route STA | Executed | 16-corner results documented; completion does not itself prove timing closure |
+| DRC/LVS/signoff | Not established by this README | Do not interpret the available evidence as clean signoff |
+| Final merged GDSII | Not established by this README | No claim of a verified, signoff-ready top-level GDSII |
 
-## Practical Routing Result
-
-The `picorv32a` design was routed using the OpenLane physical-design flow.
-
-Run tag:
-
-```text
-25-09_04-32
-```
-
-The routing stage reported:
-
-```text
-[INFO]: Routing completed for picorv32a/25-09_04-32
-```
-
-The routing results included:
-
-```text
-picorv32a.def
-picorv32a.def.png
-picorv32a.def.ref
-picorv32a.spef
-```
-
-![Routing Completed](SKY130_D5_SK1_Routing_and_Design/images/routing_completed.png)
+For the detailed stage-by-stage evidence, results, and caveats, see [`physical_design/README.md`](physical_design/README.md).
 
 ---
 
-# SKY130_D5_SK2 – Power Distribution
+# 1. RTL Design
 
-## Power Distribution Network
+The BabySoC RTL is described using **Verilog HDL**. The existing RTL files are maintained in the repository's `rtl/` directory.
 
-The Power Distribution Network (PDN) provides power and ground connectivity throughout the physical design.
+The top-level module is `vsdbabysoc`. At RTL, the design describes intended hardware behavior without specifying every physical standard cell or the final layout.
 
-A typical PDN contains structures such as:
+# 2. Pre-Synthesis Simulation
 
-- Standard-cell power rails
-- Power straps
-- Power rings
-- Macro power connections
-- VDD and GND connections
+The RTL was simulated using:
 
-![Power Distribution Network](SKY130_D5_SK2_Power_Distribution/images/power_distribution_network.png)
+- **Icarus Verilog**
+- **GTKWave**
 
-## PDN Generation
-
-The PDN stage was executed for `picorv32a` using the SKY130 PDN configuration.
-
-The OpenROAD PDN generator reached standard-cell grid insertion and database writing:
+The simulation flow is:
 
 ```text
-[INFO] [PDNG-0013] Inserting stdcell grid - grid
-[INFO] [PDNG-0015] Writing to database
+RTL → Icarus Verilog → VCD waveform → GTKWave
 ```
 
-## PDN Generation Error
+Signals observed include `CLK`, `REF`, `reset`, `VCO_IN`, `VREFH`, `RV_TO_DAC[9:0]`, and `OUT`.
 
-The original OpenROAD PDN flow then encountered an OpenDB BTerm-related error:
+# 3. Logic Synthesis Using Yosys
+
+**Yosys** was used to synthesize the RTL. The synthesis flow includes RTL reading, optimization, flip-flop mapping, logic optimization, and technology mapping.
+
+The target standard-cell library is:
 
 ```text
-invalid command name "NULL"
+sky130_fd_sc_hd
 ```
 
-The error occurred during the power-pin export path:
+The typical Liberty file used in the documented synthesis setup is:
 
 ```text
-export_opendb_power_pin
-        ↓
-$bterm setSpecial
-        ↓
-NULL setSpecial
+sky130_fd_sc_hd__tt_025C_1v80.lib
 ```
 
-The flow finally reported:
+Representative Yosys commands used in the flow include:
 
 ```text
-[CRIT] [PDNG-9999] Unexpected error: invalid command name "NULL"
+read_verilog
+dfflibmap
+opt
+abc
+show
+flatten
+setundef -zero
+clean -purge
+rename -enumerate
+write_verilog
 ```
 
-![PDN Generation Error](SKY130_D5_SK2_Power_Distribution/images/pdn_generation_error.png)
+In brief:
 
-## OpenLane Flow Failure
+- `read_verilog` reads RTL source files.
+- `dfflibmap` maps flip-flops to library cells.
+- `opt` performs logic optimizations.
+- `abc` performs logic optimization and technology mapping using the target library.
+- `show` displays a design representation.
+- `flatten` removes module hierarchy by incorporating lower-level logic into the parent.
+- `setundef -zero` replaces undefined values with zero in the synthesized representation.
+- `clean -purge` removes unused or redundant objects.
+- `rename -enumerate` systematically renames generated objects.
+- `write_verilog` writes the resulting netlist.
 
-OpenLane subsequently reported that the OpenROAD PDN process exited abnormally:
+# 4. SKY130 Technology Mapping and Gate-Level Netlist
+
+Technology mapping replaces generic logic with cells from the target standard-cell library. Examples of cell names include:
 
 ```text
-[ERROR] Exit code: 1
-[ERROR] child process exited abnormally
-[ERROR] Flow Failed.
+sky130_fd_sc_hd__nand2_1
+sky130_fd_sc_hd__nor2_1
+sky130_fd_sc_hd__and2_0
+sky130_fd_sc_hd__mux2_1
+sky130_fd_sc_hd__xor2_1
+sky130_fd_sc_hd__dfrtp_1
 ```
 
-![PDN Flow Failure](SKY130_D5_SK2_Power_Distribution/images/pdn_flow_failure.png)
-
-## PDN Root-Cause Investigation
-
-The failure was investigated at the OpenDB level.
-
-The investigation showed that the `VPWR` and `VGND` BTerms already existed in the database. The BTerm creation path could therefore return `NULL` when attempting to create an already-existing BTerm.
-
-A source-level modification was developed to reuse an existing BTerm and create a new BTerm only when it does not exist:
-
-```tcl
-set net [$block findNet $net_name]
-set bterm [$block findBTerm $net_name]
-
-if {$bterm == "NULL"} {
-    set bterm [odb::dbBTerm_create $net "${net_name}"]
-}
-
-$bterm setSpecial
-$bterm setSigType $signal_type
-$bterm setIoType "INOUT"
-```
-
-A patched OpenROAD binary was successfully built from the same OpenROAD commit used by OpenLane v0.21.
-
-> **Note:** The original PDN execution is documented as a failure/debugging result. It is not presented as a successfully completed PDN stage.
-
----
-
-# SKY130_D5_SK3 – TritonRoute Features
-
-## TritonRoute Overview
-
-TritonRoute is the detailed-routing component used in the physical-design flow.
-
-The training material covers routing features including:
-
-- Fast routing
-- Detailed routing
-- Route-guide preprocessing
-- Panel-based routing
-- Connectivity handling
-- Access points
-- Routing topology
-
-## Fast Route and Detailed Route
-
-Routing can be divided conceptually into fast/global routing and detailed routing.
-
-![Fast and Detail Routing](SKY130_D5_SK3_TritonRoute_Features/images/routing_fast_and_detail.png)
-
-## Preprocessed Route Guides
-
-Route-guide preprocessing includes operations such as:
-
-- Splitting
-- Merging
-- Bridging
-- Generation of preprocessed guides
-
-![Preprocessed Route Guides](SKY130_D5_SK3_TritonRoute_Features/images/preprocessed_route_guides.png)
-
-## Intra-Layer Parallel and Inter-Layer Sequential Panel Routing
-
-Panel-based routing divides the routing problem into manageable routing regions and supports routing across multiple metal layers.
-
-![Parallel and Sequential Panel Routing](SKY130_D5_SK3_TritonRoute_Features/images/parallel_sequential_panel_routing.png)
-
-## Connectivity and Access Points
-
-TritonRoute uses access points to establish connectivity between routing objects.
-
-An Access Point (AP) is an on-grid point on a metal layer used to connect routing segments, pins, I/O ports, or other routing layers.
-
-An Access Point Cluster (APC) groups related access points.
-
-![TritonRoute Connectivity and Access Points](SKY130_D5_SK3_TritonRoute_Features/images/tritonroute_connectivity_access_points.png)
-
----
-
-# Practical Design Results
-
-**Design:** `picorv32a`
-
-**Technology:** SKY130
-
-**Flow:** OpenLane v0.21
-
-**OpenROAD:** 0.9.0
-
-**Run Tag:** `25-09_04-32`
-
-The routed design produced:
+The synthesized netlist documented in the original flow is:
 
 ```text
-picorv32a.def
-picorv32a.def.png
-picorv32a.def.ref
-picorv32a.spef
+baby_soc_netlist3.v
 ```
 
-The routing stage reported successful completion:
+The actual repository path should be checked if this file is moved or renamed.
+
+# 5. Post-Synthesis Simulation
+
+The synthesized netlist was simulated using:
+
+- Icarus Verilog
+- SKY130 Verilog cell models
+- The testbench
+- GTKWave
+
+The documented compile-time options were:
 
 ```text
-[INFO]: Routing completed for picorv32a/25-09_04-32
+-DPOST_SYNTH_SIM
+-DFUNCTIONAL
+-DUNIT_DELAY=#1
 ```
 
----
+The functional gate-level simulation generated a VCD waveform. The RTL and synthesized waveforms were compared using signals including `CLK`, `REF`, `reset`, `RV_TO_DAC[9:0]`, and `OUT`.
 
-# Tools and Technologies
+**Interpretation:** Functional gate-level simulation checks logical behavior under the applied testbench. It is not the same as timing-aware gate-level simulation and does not replace STA.
 
-| Tool / Technology | Purpose |
+# 6. Static Timing Analysis and Physical Design
+
+The repository now documents the physical-design work from **pre-layout STA through post-route STA**. The detailed evidence is grouped under `physical_design/`:
+
+| Stage | Documentation / evidence |
 |---|---|
-| OpenLane v0.21 | ASIC physical-design flow |
-| OpenROAD 0.9.0 | Physical-design implementation |
-| TritonRoute | Detailed routing |
-| OpenDB | Physical-design database |
-| SKY130 | Open-source 130 nm technology |
-| Magic | Layout inspection |
-| SPEF | Parasitic representation |
-| picorv32a | Practical ASIC design |
+| Pre-layout STA | [`physical_design/pre_layout_sta/`](physical_design/pre_layout_sta/) |
+| Floorplanning | [`physical_design/floorplanning/`](physical_design/floorplanning/) |
+| Placement | [`physical_design/placement/`](physical_design/placement/) |
+| Clock Tree Synthesis | [`physical_design/cts/`](physical_design/cts/) |
+| Routing | [`physical_design/routing/`](physical_design/routing/) |
+| Post-route STA | [`physical_design/post_route_sta/`](physical_design/post_route_sta/) |
+| Overall physical-design notes | [`physical_design/README.md`](physical_design/README.md) |
+
+### Important interpretation notes
+
+- **Pre-layout STA:** The documented analysis covers 18 corners. Negative setup slack indicates setup timing violations for the relevant constraints and corners. Check the included reports for exact metrics and units.
+- **Floorplanning:** The captured floorplan evidence reported 17 unconstrained pins. This should be documented as a constraint/setup limitation and investigated; it should not be hidden.
+- **Placement and CTS:** GUI screenshots demonstrate that stages were run, but screenshots alone do not establish placement quality, clock skew acceptability, or timing closure.
+- **Routing:** Routing-stage evidence is available, but short violations were observed in the available routing DRC report. Do not describe the routed design as DRC-clean unless a subsequent verified report supports that claim.
+- **Post-route STA:** The documented run completed analysis for 16 corners. Run completion is not equivalent to passing setup and hold timing at every corner. Interpret the reported slack according to the source report's definitions and units.
+- **GDSII and signoff:** Do not claim verified top-level GDSII generation, LVS cleanliness, signoff readiness, or timing closure unless the corresponding artifacts and reports are present and reviewed.
+
+# 7. Results and Existing Simulation Evidence
+
+The original results images remain linked below. Confirm that each file exists at the stated relative path and that the filename's capitalization matches the repository.
+
+## BabySoC Architecture
+
+![BabySoC Architecture](results/architecture.png)
+
+## Pre-Synthesis Simulation
+
+![Pre-Synthesis Waveform](results/pre_synthesis_waveform.png)
+
+## Synthesis Results
+
+![Synthesis Statistics 1](results/synthesis_statistics1.png)
+
+![Synthesis Statistics 2](results/synthesis_statistics2.png)
+
+## Post-Synthesis Simulation
+
+![Post-Synthesis Waveform](results/post_synthesis_waveform.png)
+
+Physical-design screenshots and reports are maintained separately under `physical_design/` so that the simulation/synthesis evidence and physical-design evidence remain organized.
 
 ---
 
-# Key Learning Outcomes
+# 8. Tools and Technologies
 
-After completing this module, the following concepts were studied and applied:
-
-- Maze routing
-- Lee's algorithm
-- Physical routing constraints
-- Parasitic extraction
-- SPEF generation
-- Power Distribution Network concepts
-- Standard-cell power rails and metal straps
-- OpenROAD PDN generation
-- OpenDB BTerm debugging
-- TritonRoute routing stages
-- Route-guide preprocessing
-- Panel-based routing
-- Access points and access point clusters
-- Practical routing of the `picorv32a` design
+| Area | Tools / technology |
+|---|---|
+| HDL | Verilog HDL |
+| Simulation | Icarus Verilog, GTKWave |
+| Synthesis | Yosys, ABC |
+| Standard-cell library | SKY130 `sky130_fd_sc_hd` |
+| Timing analysis | STA tooling and Liberty timing models |
+| Physical design | OpenROAD-based flow / OpenROAD GUI evidence |
+| Environment | Linux |
 
 ---
 
-# Module Summary
+# Key Learning
 
-Module 5 connects routing theory, power distribution, and TritonRoute concepts with practical ASIC physical-design implementation.
+This project demonstrates the distinction between the main implementation representations:
 
-The `picorv32a` design was successfully routed and generated routed DEF and SPEF outputs.
+- **RTL:** behavioral/structural hardware description.
+- **Synthesized netlist:** technology-mapped standard-cell connectivity.
+- **Physical implementation:** floorplan, placed cells, clock tree, and routed interconnect.
+- **STA:** constraint-based analysis of timing paths at specified corners; it is not a functional simulation.
+- **Physical verification:** DRC and LVS checks that must be supported by their own reports.
 
-The PDN stage was also investigated in detail. The original PDN flow encountered an OpenDB BTerm-related `NULL` error during database export. The issue was traced through the OpenROAD PDN call path, and a source-level BTerm-reuse modification was developed and compiled.
+The central lesson is that progress through a flow stage does not automatically mean that the design passes that stage's quality checks. Timing, constraints, routing, and physical-verification results must be reviewed independently.
 
+## Current Milestone
+
+**Documented milestone:** RTL → post-synthesis functional simulation → pre-layout STA → floorplanning → placement → CTS → routing → post-route STA.
+
+**Next engineering priority:** Review and resolve constraint issues and timing violations, investigate the reported routing DRC shorts, and collect verified reports for subsequent physical verification. Do not label the design signoff-ready until the relevant checks pass.
