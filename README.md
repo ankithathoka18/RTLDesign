@@ -1,125 +1,96 @@
-# Day 2 – RTL Synthesis and Optimization
+# Day 3 – Combinational, Sequential & Counter Optimization
 
 ## Overview
 
-Day 2 focused on RTL synthesis, module hierarchy, flip-flop coding
-styles, and synthesis optimization using Yosys and the SKY130
-standard-cell library.
+Day 3 focused on understanding how different RTL descriptions are optimized during synthesis and how the resulting logic is mapped to SKY130 standard cells.
 
-## Topics Covered
+The work was divided into three major areas:
 
-- Hierarchical vs. flat synthesis
-- Module hierarchy and flattening
-- SKY130 technology mapping
-- Asynchronous reset DFF
-- Asynchronous set DFF
-- Synchronous reset DFF
-- RTL simulation using Icarus Verilog
-- Waveform analysis using GTKWave
-- Arithmetic synthesis optimization
-- Conditional logic optimization
+- Combinational logic optimization
+- Sequential logic optimization
+- Counter optimization
 
-## 1. Hierarchical vs. Flat Synthesis
+The synthesized designs were analyzed using Yosys and the resulting logic structures were inspected using synthesis evidence and netlist visualization.
 
-Design hierarchy:
+---
 
-```text
-multiple_modules
-├── sub_module1
-└── sub_module2
-```
+## 1. Combinational Optimization
 
-Files:
+This section explores how synthesis tools simplify and optimize combinational RTL descriptions.
 
-- `multiple_modules.v` – Original RTL
-- `multiple_modules_hier.v` – Hierarchical synthesized netlist
-- `multiple_modules_flat.v` – Flattened synthesized netlist
+The experiments include individual optimization cases as well as optimization across multiple modules.
 
-The hierarchical netlist preserves module boundaries, while
-flattening removes those boundaries and allows optimization across
-the complete design.
+### Experiments
 
-## 2. Flip-Flop Coding Styles
+- `opt_check`
+- `opt_check2`
+- `opt_check3`
+- `opt_check4`
+- `multiple_module_opt_check`
 
-Implemented and analyzed:
+The corresponding synthesis evidence is documented inside the module folder.
 
-- Asynchronous reset
-- Asynchronous set
-- Synchronous reset
+📁 [01_Combinational_Optimization](./01_Combinational_Optimization/)
 
-Files include the corresponding RTL and testbenches.
+---
 
-Simulation was performed using **Icarus Verilog** and waveforms were
-analyzed using **GTKWave**.
+## 2. Sequential Optimization
 
-### Key Learning
+This section explores optimization of sequential RTL using DFF-based designs.
 
-```text
-Asynchronous reset → independent of clock edge
-Synchronous reset  → evaluated at clock edge
-```
+The experiments examine different constant-driven DFF configurations and their resulting synthesized structures.
 
-## 3. Synthesis Optimization
+### Experiments
 
-### Multiplication by 2
+- DFF Constant 1
+- DFF Constant 2
+- DFF Constant 3
+- DFF Constant 4
+- DFF Constant 5
 
-RTL:
+The corresponding synthesis and simulation evidence is documented inside the module folder.
 
-```verilog
-assign y = a * 2;
-```
+📁 [02_Sequential_Optimization](./02_Sequential_Optimization/)
 
-Yosys optimized the operation to:
+---
 
-```verilog
-assign y = {a, 1'b0};
-```
+## 3. Counter Optimization
 
-This demonstrates that multiplication by a power of two can be
-implemented as a shift.
+This section explores how synthesis tools optimize counter-based RTL and map the resulting logic to SKY130 standard cells.
 
-### Multiplication by 9
+The experiments demonstrate different counter optimization cases and their resulting synthesized structures.
 
-RTL:
+📁 [03_Counter_Optimization](./03_Counter_Optimization/)
 
-```verilog
-assign y = a * 9;
-```
+---
 
-The current Yosys 0.47+121 output retained the multiplication
-expression in its generated Verilog representation.
+## Tools & Technology
 
-### Conditional Logic
+The Day 3 experiments used:
 
-RTL:
+- **Yosys** – RTL synthesis and optimization
+- **SKY130** – standard-cell library
+- **GTKWave** – waveform inspection
+- **Graphviz / Yosys Netlist Visualization** – synthesized logic inspection
 
-```verilog
-assign y = a ? b : 0;
-```
+---
 
-This represents the same Boolean functionality as:
+## Key Learning Outcomes
 
-```verilog
-assign y = a & b;
-```
+Through Day 3, I learned:
 
-## Key Takeaways
+- How synthesis tools optimize RTL descriptions
+- How combinational logic can be simplified during synthesis
+- How constant values influence synthesized logic
+- How sequential RTL is optimized
+- How counter-based RTL is synthesized
+- How optimized RTL is mapped to SKY130 standard cells
+- How to inspect synthesized netlists using Yosys
 
-- RTL code describes functionality, not necessarily the final gates.
-- Synthesis can optimize arithmetic and Boolean expressions.
-- Hierarchy and flattening affect the synthesized structure.
-- Coding style affects inferred sequential hardware.
-- Technology mapping converts generic logic into SKY130 standard cells.
+---
 
-## Tools
+## Completion Status
 
-- Yosys
-- Icarus Verilog
-- GTKWave
-- SKY130 HD
-- GVim/Vim
-- Git/GitHub
+**Day 3 – Completed ✅**
 
-## Status
-
-**Day 2 – Completed**
+The three optimization areas and their corresponding synthesis evidence have been organized into separate module folders.
