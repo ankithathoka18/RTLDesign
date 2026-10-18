@@ -1,115 +1,207 @@
-# Day 5 – RTL Constructs, Case/If Statements and Synthesis
+# Day 6 – Introduction to Physical Design and OpenLane
 
 ## Overview
 
-Day 5 focused on understanding how different Verilog RTL coding constructs are interpreted during simulation and synthesized into hardware.
-
-The experiments covered:
-
-- `if` and `case` based combinational logic
-- Incomplete conditional assignments
-- Latch inference
-- MUX and DEMUX implementations
-- Generate-based RTL structures
-- Partial case assignments
-- Ripple Carry Adder
-- RTL simulation and synthesis analysis
-
-The experiments were performed using Verilog HDL, GTKWave for waveform analysis, and Yosys with the SKY130 standard-cell library for synthesis and structural analysis.
+This module introduces the physical design stage of the ASIC design flow and the open-source tools used to transform a synthesized RTL design into a physical chip implementation.
 
 ---
 
-## 1. Bad Case
+## ASIC Design Flow
 
-The `bad_case` experiment demonstrates case-based combinational logic and its synthesized hardware representation.
+The overall RTL-to-GDSII flow can be summarized as:
 
-📁 [bad_case](./bad_case/)
+```text
+RTL Design
+    ↓
+RTL Synthesis
+    ↓
+Gate-Level Netlist
+    ↓
+Static Timing Analysis
+    ↓
+Floorplanning
+    ↓
+Placement
+    ↓
+Clock Tree Synthesis
+    ↓
+Routing
+    ↓
+Parasitic Extraction
+    ↓
+Post-Route STA
+    ↓
+Physical Verification
+    ↓
+GDSII
+```
 
----
+## Open-Source ASIC Design Flow
 
-## 2. Case-Based Combinational Logic
+The physical design flow studied in this module uses open-source EDA tools together with the **SKY130 Process Design Kit (PDK)**.
 
-The `comp_case` experiment demonstrates a case-based combinational design and its synthesized implementation.
+### Major Components
 
-📁 [comp_case](./comp_case/)
+- **OpenLane** – RTL-to-GDSII implementation flow
+- **Yosys** – RTL synthesis
+- **OpenSTA** – Static Timing Analysis
+- **OpenROAD** – Physical design implementation
+- **Magic** – Layout viewing and physical verification
+- **SKY130** – Open-source 130 nm technology PDK
 
----
+The simplified RTL-to-GDSII implementation flow is:
 
-## 3. DEMUX Using Case Logic
-
-The `demux_case` experiment demonstrates a demultiplexer implemented using case-based RTL.
-
-📁 [demux_case](./demux_case/)
-
----
-
-## 4. Incomplete `if` Assignment and Latch Inference
-
-The `incomp_if` experiment demonstrates the effect of incomplete assignments in combinational RTL and the resulting latch inference during synthesis.
-
-📁 [incomp_if](./incomp_if/)
-
----
-
-## 5. Incomplete `if` – Second Case
-
-The `incomp_if2` experiment provides another example of incomplete conditional assignment and its synthesized implementation.
-
-📁 [incomp_if2](./incomp_if2/)
-
----
-
-## 6. MUX Using Generate
-
-The `mux_generate` experiment demonstrates a multiplexer implementation using generate-based RTL construction.
-
-📁 [mux_generate](./mux_generate/)
-
----
-
-## 7. Partial Case Assignment
-
-The `partial_case_assign` experiment demonstrates the hardware implications of partial assignments in case-based RTL.
-
-📁 [partial_case_assign](./partial_case_assign/)
+![Simplified RTL to GDSII Flow](rtl_to_gdsii_flow.png)
 
 ---
 
-## 8. Ripple Carry Adder
+## Open-Source EDA Tools
 
-The Ripple Carry Adder (RCA) experiment demonstrates a multi-bit arithmetic structure constructed from individual full-adder stages.
+OpenLane integrates several open-source tools to automate different stages of the ASIC implementation flow.
 
-The generated structural representation, simulation waveform, and synthesized implementation were examined.
+Some of the tools and components used in the open-source ASIC ecosystem include:
 
-📁 [Ripple_Carry_Adder](./Ripple_Carry_Adder/)
+- Yosys
+- OpenROAD
+- Magic
+- KLayout
+- ABC
+- QFlow
+- Fault
 
----
-
-## Tools Used
-
-- **Verilog HDL**
-- **Icarus Verilog**
-- **GTKWave**
-- **Yosys**
-- **SKY130 standard-cell library**
+![Open-Source EDA Tools](opensource_eda_tools.png)
 
 ---
 
-## Key Learning Outcomes
+## SKY130 PDK
 
-Through these experiments, I learned:
+A **Process Design Kit (PDK)** provides the technology-specific information required by EDA tools to design and verify an integrated circuit.
 
-- How `if` and `case` constructs are synthesized into hardware
-- How incomplete combinational assignments can infer latches
-- How coding style affects synthesized hardware
-- How generate constructs can create repeated hardware structures
-- How MUX and DEMUX logic can be described using different RTL constructs
-- How partial case assignments affect synthesis
-- How a Ripple Carry Adder can be constructed from full-adder stages
-- How to compare RTL simulation with synthesized hardware structures
+The SKY130 PDK provides information such as:
+
+- Standard-cell libraries
+- Technology rules
+- Design rules
+- Device information
+- Physical layer definitions
+- Timing and power models
+- Layout information
+
+The PDK therefore acts as the technology interface between the design tools and the semiconductor manufacturing process.
 
 ---
 
-## Completion Status
+## OpenLane
 
-**Day 5 – Completed ✅**
+**OpenLane** is an automated RTL-to-GDSII implementation flow that integrates several open-source EDA tools.
+
+A simplified OpenLane flow is:
+
+```text
+RTL
+ ↓
+Synthesis
+ ↓
+Floorplanning
+ ↓
+Placement
+ ↓
+Clock Tree Synthesis
+ ↓
+Routing
+ ↓
+Parasitic Extraction
+ ↓
+STA
+ ↓
+Physical Verification
+ ↓
+GDSII
+```
+
+## Physical Design
+
+Physical design converts the synthesized logical representation of a circuit into a physical arrangement of standard cells, macros, and interconnects.
+
+The major physical design stages include:
+
+### 1. Floorplanning
+
+Defines the physical boundaries of the design, including the core and die dimensions.
+
+### 2. Placement
+
+Determines the physical locations of standard cells within the core while considering wirelength, timing, congestion, and density.
+
+### 3. Clock Tree Synthesis
+
+Builds a clock distribution network to deliver the clock signal to sequential elements while controlling clock skew and insertion delay.
+
+### 4. Routing
+
+Creates physical interconnections between the placed cells.
+
+### 5. Parasitic Extraction
+
+Extracts the resistance and capacitance introduced by physical interconnects.
+
+### 6. Physical Verification
+
+Checks the physical implementation against manufacturing and connectivity requirements.
+
+---
+
+## Practical Work – Synthesis
+
+The synthesis stage was performed using **Yosys** with the SKY130 standard-cell library.
+
+The RTL was synthesized into a gate-level netlist mapped to SKY130 standard cells.
+
+### Synthesis Statistics
+
+The synthesis generated the following statistics:
+
+- Number of wires: **14,596**
+- Number of wire bits: **14,978**
+- Number of public wires: **1,565**
+- Number of cells: **14,876**
+- Reported chip area: **147,712.918400**
+
+The synthesis report also contains the breakdown of the different SKY130 standard-cell instances used in the synthesized design.
+
+![Synthesis Statistics](synthesis_statistics_1.png)
+
+![Synthesis Cell Statistics and Chip Area](synthesis_statistics_2.png)
+
+---
+
+## Learning Outcomes
+
+After completing this module, I gained an understanding of:
+
+- The transition from RTL to physical implementation
+- The role of a PDK in ASIC design
+- The OpenLane RTL-to-GDSII flow
+- The purpose of RTL synthesis
+- The role of Yosys in synthesis
+- The purpose of floorplanning and placement
+- The relationship between logical synthesis and physical implementation
+- The role of open-source EDA tools in ASIC design
+- The major stages involved in an ASIC physical design flow
+
+---
+
+## Status
+
+| Stage | Status |
+|---|---|
+| RTL Design | ✅ Completed |
+| Synthesis | ✅ Completed |
+| Floorplanning | ⏭️ Covered in Day 7 |
+| Placement | ⏭️ Covered in Day 7 |
+| Clock Tree Synthesis | ⏳ To be covered |
+| Routing | ⏳ To be covered |
+| Parasitic Extraction | ⏳ To be covered |
+| Post-Route STA | ⏳ To be covered |
+| Physical Verification | ⏳ To be covered |
+| GDSII Generation | ⏳ To be covered |
